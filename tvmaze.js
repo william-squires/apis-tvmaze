@@ -4,6 +4,7 @@ const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
 const searchShowsUrl = "http://api.tvmaze.com/search/shows";
+const missingImagePlaceholder = "https://tinyurl.com/tv-missing"
 //http://api.tvmaze.com/search/shows?q=[searchquery]
 //http://api.tvmaze.com/shows/[showid]/episodes
 
@@ -25,13 +26,12 @@ async function getShowsByTerm(term) {
 
 /** takes a show and returns an object with only its 
  * id, name, summary, and image. If there is no image,
- * that value is set to null.
+ * instead set a placeholder image 
  */
 function makeShowObject(show) {
-  const id = show.id;
-  const name = show.name;
-  const summary = show.summary;
-  const image = (show.image) ? show.image.original : null;
+  let {id , name, summary, image} = show;
+  console.log(image);
+  image = (image) ? image.original : missingImagePlaceholder;
   return {id, name, summary, image};
 }
 
@@ -67,7 +67,6 @@ function populateShows(shows) {
  *    Hide episodes area (that only gets shown if they ask for episodes)
  */
 async function searchForShowAndDisplay() {
-  console.log("searchForShowAndDisplay ran");
   const term = $("#searchForm-term").val();
   const shows = await getShowsByTerm(term);
 
@@ -77,7 +76,6 @@ async function searchForShowAndDisplay() {
 
 $searchForm.on("submit", async function (evt) {
   evt.preventDefault();
-  console.log("button was pressed");
   await searchForShowAndDisplay();
 });
 
