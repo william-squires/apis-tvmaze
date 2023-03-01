@@ -3,8 +3,8 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
-const searchShowsUrl = "http://api.tvmaze.com/search/shows";
-const missingImagePlaceholder = "https://tinyurl.com/tv-missing"
+const TVMAZE_API_URL = "http://api.tvmaze.com";
+const MISSING_IMAGE_PLACEHOLDER = "https://tinyurl.com/tv-missing";
 //http://api.tvmaze.com/search/shows?q=[searchquery]
 //http://api.tvmaze.com/shows/[showid]/episodes
 
@@ -15,24 +15,26 @@ const missingImagePlaceholder = "https://tinyurl.com/tv-missing"
  *    Each show object should contain exactly: {id, name, summary, image}
  *    (if no image URL given by API, put in a default image URL)
  */
-
 async function getShowsByTerm(term) {
-  console.log("getShowsByTerm", term);
-  const params = {params: {q : term}}
-  const showsResponse = await axios.get(searchShowsUrl, params);
-  let showsData = showsResponse.data;
-  return showsData.map( show => makeShowObject(show.show));
+  const config = {
+    baseURL: TVMAZE_API_URL,
+    url: "/search/shows",
+    params: { q: term }
+  }
+  const response = await axios(config);
+  const showsData = response.data;
+  return showsData.map(show => getShowObject(show.show));
 }
 
 /** takes a show and returns an object with only its 
  * id, name, summary, and image. If there is no image,
  * instead set a placeholder image 
  */
-function makeShowObject(show) {
-  let {id , name, summary, image} = show;
-  console.log(image);
-  image = (image) ? image.original : missingImagePlaceholder;
-  return {id, name, summary, image};
+function getShowObject(show) {
+  let { id, name, summary, image } = show;
+  // according to the API, if there is no image, image = null
+  image = (image) ? image.original : MISSING_IMAGE_PLACEHOLDER;
+  return { id, name, summary, image };
 }
 
 
@@ -42,7 +44,7 @@ function populateShows(shows) {
 
   for (let show of shows) {
     const $show = $(
-        `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
+      `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img 
               src="${show.image}" 
@@ -59,7 +61,8 @@ function populateShows(shows) {
        </div>
       `);
 
-    $showsList.append($show);  }
+    $showsList.append($show);
+  }
 }
 
 
@@ -78,14 +81,37 @@ $searchForm.on("submit", async function (evt) {
   evt.preventDefault();
   await searchForShowAndDisplay();
 });
+$('#showsList').on('click', '.Show-getEpisodes', handleGetShowEpisodes);
 
 
+async function handleGetShowEpisodes(evt) {
+  evt.preventDefault();
+  let showId = $(event.target).closest(".Show").data("show-id");
+  await console.log(getEpisodesOfShow(showId));
+  
+
+}
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id) {
+  const config = {
+    baseURL: TVMAZE_API_URL,
+    url: `/shows/${id}/episodes`
+  }
+  const response = await axios(config);
+  let episodes = response.data.map(episode => getEpisodeObject(episode));
+  return episodes;
+}
 
+/** takes an episode and returns an object with only its 
+ * id, name, season, and number.
+ */
+function getEpisodeObject(episode) {
+  const {id, name, season, number} = episode;
+  return {id, name, season, number};
+}
 /** Write a clear docstring for this function... */
 
 // function populateEpisodes(episodes) { }
