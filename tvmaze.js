@@ -2,6 +2,7 @@
 
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
+const $episodesList = $("#episodesList");
 const $searchForm = $("#searchForm");
 const TVMAZE_API_URL = "http://api.tvmaze.com";
 const MISSING_IMAGE_PLACEHOLDER = "https://tinyurl.com/tv-missing";
@@ -81,20 +82,30 @@ $searchForm.on("submit", async function (evt) {
   evt.preventDefault();
   await searchForShowAndDisplay();
 });
-$('#showsList').on('click', '.Show-getEpisodes', handleGetShowEpisodes);
+$('#showsList').on('click', '.Show-getEpisodes', handleGetEpisodes);
 
 
-async function handleGetShowEpisodes(evt) {
+
+/**
+ * When an episodes button is pressed, handleGetEpisodes grabs the episode
+ * information, for the associated show, from the TVMaze API
+ * and adds it to the bottom of the page.
+ */
+async function handleGetEpisodes(evt) {
   evt.preventDefault();
-  let showId = $(event.target).closest(".Show").data("show-id");
-  await console.log(getEpisodesOfShow(showId));
-  
-
+  $episodesList.empty();
+  $episodesArea.show();
+  let id = $(evt.target).closest(".Show").data("show-id");
+  console.log("got id");
+  let episodes = await getEpisodesOfShow(id);
+  console.log("got episodes from API", episodes);
+  populateEpisodes(episodes);
 }
+
+
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
-
 async function getEpisodesOfShow(id) {
   const config = {
     baseURL: TVMAZE_API_URL,
@@ -105,13 +116,31 @@ async function getEpisodesOfShow(id) {
   return episodes;
 }
 
+
 /** takes an episode and returns an object with only its 
  * id, name, season, and number.
  */
 function getEpisodeObject(episode) {
-  const {id, name, season, number} = episode;
-  return {id, name, season, number};
+  const { id, name, season, number } = episode;
+  return { id, name, season, number };
 }
-/** Write a clear docstring for this function... */
 
-// function populateEpisodes(episodes) { }
+
+/** Takes an array of episodes and adds each to DOM */
+function populateEpisodes(episodes) {
+  console.log("populateEpisodes", episodes);
+  episodes.map(episode => $episodesList.append(getEpisodeElement(episode)));
+}
+
+
+/** getEpisodeElement takes an episode object
+ *  and returns a jQuery <li> element populated
+ *  with the episode's values.
+ */
+function getEpisodeElement(episode) {
+  const $episode = $(
+    `<li data-episode-id="${episode.id}">
+      ${episode.name} Season: ${episode.season} Episode: ${episode.number}
+    </li>`);
+  return $episode;
+}
