@@ -18,6 +18,7 @@ const MISSING_IMAGE_PLACEHOLDER = "https://tinyurl.com/tv-missing";
  */
 async function getShowsByTerm(term) {
   const config = {
+    method : 'get',
     baseURL: TVMAZE_API_URL,
     url: "/search/shows",
     params: { q: term }
@@ -90,10 +91,8 @@ $searchForm.on("submit", async function (evt) {
  * information, for the associated show, from the TVMaze API
  * and adds it to the bottom of the page.
 */
-async function handleGetEpisodes(evt) {
+async function getEpisodesAndDisplay(evt) {
   evt.preventDefault();
-  $episodesList.empty();
-  $episodesArea.show();
   let id = $(evt.target).closest(".Show").data("show-id");
   let episodes = await getEpisodesOfShow(id);
   populateEpisodes(episodes);
@@ -105,11 +104,12 @@ async function handleGetEpisodes(evt) {
 */
 async function getEpisodesOfShow(id) {
   const config = {
+    method: 'get',
     baseURL: TVMAZE_API_URL,
     url: `/shows/${id}/episodes`
   }
   const response = await axios(config);
-  let episodes = response.data.map(episode => getEpisodeObject(episode));
+  const episodes = response.data.map(episode => getEpisodeObject(episode));
   return episodes;
 }
 
@@ -125,11 +125,14 @@ function getEpisodeObject(episode) {
 
 /** Takes an array of episodes and adds each to DOM */
 function populateEpisodes(episodes) {
+  $episodesList.empty();
+  $episodesArea.show();
   episodes.map(episode => $episodesList.append(getEpisodeElement(episode)));
 }
 
 
-/** getEpisodeElement takes an episode object
+/** getEpisodeElement takes an episode object:
+ * {id, name, season, number}
  *  and returns a jQuery <li> element populated
  *  with the episode's values.
 */
@@ -142,4 +145,4 @@ function getEpisodeElement(episode) {
 }
 
 
-$('#showsList').on('click', '.Show-getEpisodes', handleGetEpisodes);
+$('#showsList').on('click', '.Show-getEpisodes', getEpisodesAndDisplay);
